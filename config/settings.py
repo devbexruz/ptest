@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-httm((1jr4qzxp_7k*sp5jlc1a+vkbn%mb^imff@1c9@$u8f0+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api'
+    'api',
+    'rest_framework',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -122,3 +124,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# DEFAULT_AUTH_USER = 'api.models.User'
+AUTH_USER_MODEL = 'api.User'
+
+
+# Sagger Plugin
+

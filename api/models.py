@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-import enums
+from . import enums
 # Create your models here.
 
 class User(AbstractUser):
@@ -41,6 +41,7 @@ class Test(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
     def __str__(self):
         return self.value
+
 class Variant(models.Model):
     value = models.TextField()
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
@@ -48,3 +49,29 @@ class Variant(models.Model):
     
     def __str__(self):
         return self.value
+
+class Result(models.Model):
+    # Userning natijalari
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    # Kerakli numberlar
+    test_length = models.IntegerField()
+    true_answers = models.IntegerField()
+
+    # test ni qaysi turda yechgan
+    test_type = models.CharField(
+        max_length=100,
+        choices=enums.TestTypeChoices.choices,
+        default=enums.TestTypeChoices.EXAM
+    )
+    start_time = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.user.username} - {self.test_type} - {'Correct' if self.is_correct else 'Incorrect'}"
+
+class TestAnswerSheet(models.Model):
+    result = models.ForeignKey(Result, on_delete=models.CASCADE)
+    current_answer = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
+    selected = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.result.id} - {'Successful' if self.successful else 'Unsuccessful'}"
