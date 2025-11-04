@@ -8,4 +8,4 @@ class TestChoices(models.TextChoices):
     EXAM = 'EXAM', "Exam"
     TICKET = 'TICKET', "Ticket"
     SETTEST = "SETTEST", "Settest"
-    
+

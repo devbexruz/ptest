@@ -1,49 +1,77 @@
 from django.urls import path
-from api.views import (
-    UserViewSet,
-    ImageViewSet,
-    TestViewSet,
-    ThemeViewSet,
-    TicketViewSet,
-    VariantViewSet
+
+# U S E R S
+#############################################################################################
+# User Imports
+
+
+# User Urls
+urlpatterns = [
+
+]
+
+# A D M I N
+#############################################################################################
+# Admin Imports
+from api.views.admin_apis import (
+    # User imports
+    UserView,
+    UserByIdView,
+    
+    # Theme imports
+    ThemeView,
+    ThemeByIdView,
+
+    # Ticket imports
+    TicketView,
+    TicketByIdView,
+
+    # Test imports
+    TestView,
+    TestByIdView,
+
+    # Test Variant imports
+    TestVariantView,
+    TestVariantByIdView,
+    VariantIsTrueView
 )
 
-urlpatterns = [
-    # User Viewsets
-    path("get_users", UserViewSet.as_view({"get": "list"})),
-    path("get_user/<int:pk>", UserViewSet.as_view({"get": "retrieve"})),
-    path("create_user", UserViewSet.as_view({"post": "create"})),
-    path("update_user/<int:pk>", UserViewSet.as_view({"put": "update"})),
-    path("delete_user/<int:pk>", UserViewSet.as_view({"delete": "destroy"})),
-    # Image Viewsets
-    path("get_images", ImageViewSet.as_view({"get": "list"})),
-    path("get_image/<int:pk>", ImageViewSet.as_view({"get": "retrieve"})),
-    path("create_image", ImageViewSet.as_view({"post": "create"})),
-    path("update_image/<int:pk>", ImageViewSet.as_view({"put": "update"})),
-    path("delete_image/<int:pk>", ImageViewSet.as_view({"delete": "destroy"})),
-    # Test Viewsets
-    path("get_tests", TestViewSet.as_view({"get": "list"})),
-    path("get_test/<int:pk>", TestViewSet.as_view({"get": "retrieve"})),
-    path("create_test", TestViewSet.as_view({"post": "create"})),
-    path("update_test/<int:pk>", TestViewSet.as_view({"put": "update"})),
-    path("delete_test/<int:pk>", TestViewSet.as_view({"delete": "destroy"})),
-    # Theme Viewsets
-    path("get_themes", ThemeViewSet.as_view({"get": "list"})),
-    path("get_theme/<int:pk>", ThemeViewSet.as_view({"get": "retrieve"})),
-    path("create_theme", ThemeViewSet.as_view({"post": "create"})),
-    path("update_theme/<int:pk>", ThemeViewSet.as_view({"put": "update"})),
-    path("delete_theme/<int:pk>", ThemeViewSet.as_view({"delete": "destroy"})),
-    # Ticket Viewsets
-    path("get_tickets", TicketViewSet.as_view({"get": "list"})),
-    path("get_ticket/<int:pk>", TicketViewSet.as_view({"get": "retrieve"})),
-    path("create_ticket", TicketViewSet.as_view({"post": "create"})),
-    path("update_ticket/<int:pk>", TicketViewSet.as_view({"put": "update"})),
-    path("delete_ticket/<int:pk>", TicketViewSet.as_view({"delete": "destroy"})),
-    # Variant Viewsets
-    path("get_variants", VariantViewSet.as_view({"get": "list"})),
-    path("get_variant/<int:pk>", VariantViewSet.as_view({"get": "retrieve"})),
-    path("create_variant", VariantViewSet.as_view({"post": "create"})),
-    path("update_variant/<int:pk>", VariantViewSet.as_view({"put": "update"})),
-    path("delete_variant/<int:pk>", VariantViewSet.as_view({"delete": "destroy"})),
+# Admin Urls
+urlpatterns += [
+    # User urls
+    path("admin/user/", UserView.as_view(), name="User-get-all-create"),
+    path("admin/user/<int:pk>/", UserByIdView.as_view(), name="User-get-update-delete"),
+    
+    # Theme urls
+    path("admin/theme/", ThemeView.as_view(), name="Theme-get-all-create"),
+    path("admin/theme/<int:pk>/", ThemeByIdView.as_view(), name="Theme-get-update-delete"),
 
+    # Ticket urls
+    path("admin/ticket/", TicketView.as_view(), name="Ticket-get-all-create"),
+    path("admin/ticket/<int:pk>/", TicketByIdView.as_view(), name="Ticket-get-update-delete"),
+
+    # Test urls
+    path("admin/test/", TestView.as_view(), name="Test-get-all-create"),
+    path("admin/test/<int:pk>/", TestByIdView.as_view(), name="Test-get-update-delete"),
+
+    # Test Variant urls
+    path("admin/test/<int:test_id>/variant/", TestVariantView.as_view(), name="Test-variant-get-all-create"),
+    path("admin/test/variant/<int:pk>/", TestVariantByIdView.as_view(), name="Test-variant-get-update-delete"),
+    # True Variant select url
+    path("admin/test/variant/<int:pk>/true/", VariantIsTrueView.as_view(), name="Test-variant-true-select"),
+]
+
+
+# A U T H
+#############################################################################################
+# Auth Imports
+from api.views.auth_apis import (
+    LoginView,
+    LogoutView,
+)
+
+# Auth Urls
+urlpatterns += [
+    path("auth/login/", LoginView.as_view(), name="Login"),
+    path("auth/logout/", LogoutView.as_view(), name="Logout")
 ]

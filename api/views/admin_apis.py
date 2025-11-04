@@ -1,0 +1,516 @@
+# Admin
+from django.contrib.auth import authenticate, logout
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework import status, parsers
+from rest_framework.permissions import IsAuthenticated
+from api.serializers import (
+    # User serializers
+    CreateUserSerializer,
+    GetUserSerializer,
+    UpdateUserSerializer,
+
+    # Theme serializers
+    CreateThemeSerializer,
+    GetThemeSerializer,
+    UpdateThemeSerializer,
+
+    # Ticket serializers
+    CreateTicketSerializer,
+    GetTicketSerializer,
+    UpdateTicketSerializer,
+
+    # Test serializers
+    CreateTestSerializer,
+    GetTestSerializer,
+    UpdateTestSerializer,
+    UploadTestImageSerializer,
+
+    # Test Variant serializers
+    CreateVariantSerializer,
+    GetVariantSerializer,
+    UpdateVariantSerializer
+)
+from api.utils import generate_token
+from rest_framework.views import APIView
+from api.decorators import user_required, admin_required
+
+# Import Models
+from api.models import (
+    UserSession,
+    User,
+    Test,
+    Theme,
+    Ticket,
+    TestSheet,
+    Variant,
+
+)
+
+# Imports for swagger
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from abc import ABC, abstractmethod
+
+# Admin User
+##############################
+# swagger-tag: Admin User
+@extend_schema(tags=["Admin User"])
+class AdminUser(APIView):
+    pass
+
+
+# User (Create, Get All)
+class UserView(AdminUser):
+    @extend_schema(
+        request=CreateUserSerializer,
+        responses={201: {'message': 'User created successfully'}},
+        description="Create a new user"
+    )
+    @admin_required
+    def post(self, request):
+        serializer = CreateUserSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            password = serializer.validated_data['password']
+
+            user = User.objects.create_user(username=username, password=password)
+            return Response({'message': 'User created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @extend_schema(
+        responses={200: GetUserSerializer(many=True)},
+        description="Get all users"
+    )
+    @admin_required
+    def get(self, request):
+        users = User.objects.all()
+        serializer = GetUserSerializer(users, many=True)
+        return Response(serializer.data)
+
+
+# User by id (Get, Update, Delete)
+class UserByIdView(AdminUser):
+    @extend_schema(
+        responses={200: GetUserSerializer},
+        description="Get user by id"
+    )
+    @admin_required
+    def get(self, request, pk):
+        try:
+            user = User.objects.get(id=pk)
+            serializer = GetUserSerializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(
+        request=UpdateUserSerializer,
+        responses={200: GetUserSerializer},
+        description="Update user by id"
+    )
+    @admin_required
+    def put(self, request, pk):
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UpdateUserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetUserSerializer},
+        description="Delete user by id"
+    )
+    @admin_required
+    def delete(self, request, pk):
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.delete()
+        return Response({'message': 'User deleted successfully'})
+    
+
+# Admin Mavzu
+##############################
+# swagger-tag: Admin Mavzu
+@extend_schema(tags=["Admin Mavzu"])
+class AdminMavzu(APIView):
+    pass
+
+
+# Mavzu (Create, Get All)
+class ThemeView(AdminMavzu):
+    @extend_schema(
+        request=CreateThemeSerializer,
+        responses={201: {'message': 'Theme created successfully'}},
+        description="Create a new theme"
+    )
+    @admin_required
+    def post(self, request):
+        serializer = CreateThemeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Theme created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetThemeSerializer(many=True)},
+        description="Get all themes"
+    )
+    @admin_required
+    def get(self, request):
+        themes = Theme.objects.all()
+        serializer = GetThemeSerializer(themes, many=True)
+        return Response(serializer.data)
+
+# Mavzu by id (Get, Update, Delete)
+class ThemeByIdView(AdminMavzu):
+    @extend_schema(
+        responses={200: GetThemeSerializer},
+        description="Get theme by id"
+    )
+    @admin_required
+    def get(self, request, pk):
+        try:
+            theme = Theme.objects.get(id=pk)
+            serializer = GetThemeSerializer(theme)
+            return Response(serializer.data)
+        except Theme.DoesNotExist:
+            return Response({'detail': 'Theme not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(
+        request=UpdateThemeSerializer,
+        responses={200: GetThemeSerializer},
+        description="Update theme by id"
+    )
+    @admin_required
+    def put(self, request, pk):
+        try:
+            theme = Theme.objects.get(id=pk)
+        except Theme.DoesNotExist:
+            return Response({'detail': 'Theme not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UpdateThemeSerializer(theme, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetThemeSerializer},
+        description="Delete theme by id"
+    )
+    @admin_required
+    def delete(self, request, pk):
+        try:
+            theme = Theme.objects.get(id=pk)
+        except Theme.DoesNotExist:
+            return Response({'detail': 'Theme not found'}, status=status.HTTP_404_NOT_FOUND)
+        theme.delete()
+        return Response({'message': 'Theme deleted successfully'})
+
+
+# Ticket
+##############################
+# swagger-tag: Ticket
+@extend_schema(tags=["Admin Ticket"])
+class AdminTicket(APIView):
+    pass
+
+# Ticket (Create, Get All)
+class TicketView(AdminTicket):
+    @extend_schema(
+        request=CreateTicketSerializer,
+        responses={201: {'message': 'Ticket created successfully'}},
+        description="Create a new ticket"
+    )
+    @admin_required
+    def post(self, request):
+        serializer = CreateTicketSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Ticket created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetTicketSerializer(many=True)},
+        description="Get all tickets"
+    )
+    @admin_required
+    def get(self, request):
+        tickets = Ticket.objects.all()
+        serializer = GetTicketSerializer(tickets, many=True)
+        return Response(serializer.data)
+
+# Ticket by id (Get, Update, Delete)
+class TicketByIdView(AdminTicket):
+    @extend_schema(
+        responses={200: GetTicketSerializer},
+        description="Get ticket by id"
+    )
+    @admin_required
+    def get(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(id=pk)
+            serializer = GetTicketSerializer(ticket)
+            return Response(serializer.data)
+        except Ticket.DoesNotExist:
+            return Response({'detail': 'Ticket not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(
+        request=UpdateTicketSerializer,
+        responses={200: GetTicketSerializer},
+        description="Update ticket by id"
+    )
+    @admin_required
+    def put(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(id=pk)
+        except Ticket.DoesNotExist:
+            return Response({'detail': 'Ticket not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UpdateTicketSerializer(ticket, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetTicketSerializer},
+        description="Delete ticket by id"
+    )
+    @admin_required
+    def delete(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(id=pk)
+        except Ticket.DoesNotExist:
+            return Response({'detail': 'Ticket not found'}, status=status.HTTP_404_NOT_FOUND)
+        ticket.delete()
+        return Response({'message': 'Ticket deleted successfully'})
+
+# Test
+##############################
+# swagger-tag: Test
+@extend_schema(tags=["Admin Test"])
+class AdminTest(APIView):
+    pass
+
+# Test (Create, Get All)
+class TestView(AdminTest):
+    @extend_schema(
+        request=CreateTestSerializer,
+        responses={201: {'message': 'Test created successfully'}},
+        description="Create a new test"
+    )
+    @admin_required
+    def post(self, request):
+        serializer = CreateTestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Test created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetTestSerializer(many=True)},
+        description="Get all tests"
+    )
+    @admin_required
+    def get(self, request):
+        tests = Test.objects.all()
+        serializer = GetTestSerializer(tests, many=True)
+        return Response(serializer.data)
+class TestByIdView(AdminTest):
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    @extend_schema(
+        responses={200: GetTestSerializer},
+        description="Get test by id"
+    )
+    @admin_required
+    def get(self, request, pk):
+        try:
+            test = Test.objects.get(id=pk)
+            serializer = GetTestSerializer(test)
+            return Response(serializer.data)
+        except Test.DoesNotExist:
+            return Response({'detail': 'Test not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @extend_schema(
+        request=UpdateTestSerializer,
+        responses={200: GetTestSerializer},
+        description="Update test by id"
+    )
+    @admin_required
+    def put(self, request, pk):
+        try:
+            test = Test.objects.get(id=pk)
+        except Test.DoesNotExist:
+            return Response({'detail': 'Test not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UpdateTestSerializer(test, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: GetTestSerializer},
+        description="Delete test by id"
+    )
+    @admin_required
+    def delete(self, request, pk):
+        try:
+            test = Test.objects.get(id=pk)
+        except Test.DoesNotExist:
+            return Response({'detail': 'Test not found'}, status=status.HTTP_404_NOT_FOUND)
+        test.delete()
+        return Response({'message': 'Test deleted successfully'})
+
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'image': {
+                        'type': 'string',
+                        'format': 'binary',
+                        'description': 'Test uchun rasm fayli'
+                    }
+                }
+            }
+        },
+        responses={200: {'message': 'Test Image Uploaded'}},
+        description="Test Image Upload"
+    )
+    @admin_required
+    def patch(self, request, pk):
+        try:
+            test = Test.objects.get(id=pk)
+        except Test.DoesNotExist:
+            return Response({"detail": "Test not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if 'image' not in request.FILES:
+            test.image = None
+            test.save()
+            return Response({'message': 'Test Image Removed'})
+            # return Response({'detail': 'Image fayl yuborilmadi'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        image_file = request.FILES['image']
+        
+        # Fayl turini tekshirish
+        allowed_content_types = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp']
+        if image_file.content_type not in allowed_content_types:
+            return Response({
+                'detail': f'Qo\'llab-quvvatlanmaydigan fayl formati. Faqat {", ".join(allowed_content_types)} formatlari qabul qilinadi'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Fayl hajmini tekshirish (5MB)
+        if image_file.size > 5 * 1024 * 1024:
+            return Response({
+                'detail': 'Fayl hajmi 5MB dan katta bo\'lmasligi kerak'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Faylni saqlash
+        try:
+            test.image = image_file
+            test.save()
+            return Response({'message': 'Test Image Uploaded'})
+        except Exception as e:
+            return Response({'detail': f'Rasm saqlanmadi: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Test Variant
+#################
+# swagger-tag: Test Variant
+@extend_schema(tags=['Admin Test Variant'])
+class AdminTestVariant(APIView):
+    pass
+
+class TestVariantView(AdminTestVariant):
+    @extend_schema(
+        request=CreateVariantSerializer,
+        responses={200: GetVariantSerializer},
+        description="Create a new test variant"
+    )
+    @admin_required
+    def post(self, request, test_id):
+        try:
+            test = Test.objects.get(id=test_id)
+        except Test.DoesNotExist:
+            return Response({"detail": "Test not found"}, status=status.HTTP_404_NOT_FOUND)
+        data = request.data.copy()
+        data['test_id'] = test_id
+        serializer = CreateVariantSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Test variant created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @extend_schema(
+        responses={200: GetVariantSerializer},
+        description="Get all test variants"
+    )
+    @admin_required
+    def get(self, request, test_id):
+        variants = Variant.objects.filter(test_id=test_id).all()
+        serializer = GetVariantSerializer(variants, many=True)
+        return Response(serializer.data)
+
+class TestVariantByIdView(AdminTestVariant):
+    @extend_schema(
+        responses={200: GetVariantSerializer},
+        description="Get test variant by id"
+    )
+    @admin_required
+    def get(self, request, pk):
+        try:
+            variant = Variant.objects.get(id=pk)
+            serializer = GetVariantSerializer(variant)
+            return Response(serializer.data)
+        except Variant.DoesNotExist:
+            return Response({'detail': 'Test variant not found'}, status=status.HTTP_404_NOT_FOUND)
+    @extend_schema(
+        request=UpdateVariantSerializer,
+        responses={200: GetVariantSerializer},
+        description="Update test variant by id"
+    )
+    @admin_required
+    def put(self, request, pk):
+        try:
+            variant = Variant.objects.get(id=pk)
+        except Variant.DoesNotExist:
+            return Response({'detail': 'Test variant not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UpdateVariantSerializer(variant, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @extend_schema(
+        responses={200: GetVariantSerializer},
+        description="Delete test variant by id"
+    )
+    @admin_required
+    def delete(self, request,pk):
+        try:
+            variant = Variant.objects.get(id=pk)
+        except Variant.DoesNotExist:
+            return Response({'detail': 'Test variant not found'}, status=status.HTTP_404_NOT_FOUND)
+        variant.delete()
+        return Response({'message': 'Test variant deleted successfully'})
+
+
+class VariantIsTrueView(AdminTestVariant):
+    @extend_schema(
+        responses={200: GetVariantSerializer},
+        description="Set is_true for variant"
+    )
+    @admin_required
+    def post(self, request, pk):
+        try:
+            variant = Variant.objects.get(id=pk)
+        except Variant.DoesNotExist:
+            return Response({'detail': 'Variant not found'}, status=status.HTTP_404_NOT_FOUND)
+        variant.test.correct_answer = variant
+        variant.test.active = True
+        variant.test.save()
+        return Response({'message': 'Variant is_true set successfully'})
