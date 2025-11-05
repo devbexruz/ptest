@@ -83,7 +83,7 @@ class Variant(models.Model):
 class Result(models.Model):
     # Userning natijalari
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
+    description = models.TextField()
     # Kerakli numberlar
     test_length = models.IntegerField()
     true_answers = models.IntegerField()
@@ -98,17 +98,18 @@ class Result(models.Model):
     start_time = models.DateTimeField(auto_now_add=True)
     end_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return f"{self.user.username} - {self.test_type} - {'Correct' if self.is_correct else 'Incorrect'}"
+        return f"{self.description} - {self.user.username}"
 
 class TestSheet(models.Model):
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
+    test = models.ForeignKey(Test, on_delete=models.CASCADE)
     current_answer = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
     selected = models.BooleanField(default=False)
     successful = models.BooleanField(default=None, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.result.id} - {'Successful' if self.successful else 'Unsuccessful'}"
+        return f"{self.test} - {self.result.id} - {'Successful' if self.successful else 'Unsuccessful'}"
 
 class UserSession(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_token')

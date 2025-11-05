@@ -5,6 +5,7 @@ class RoleChoices(models.TextChoices):
     STUDENT = 'STUDENT', 'Student'
 
 class TestChoices(models.TextChoices):
+    THEME = 'THEME', "Theme"
     EXAM = 'EXAM', "Exam"
     TICKET = 'TICKET', "Ticket"
     SETTEST = "SETTEST", "Settest"

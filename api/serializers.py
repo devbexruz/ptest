@@ -8,11 +8,27 @@ from api.models import (
 )
 
 class UserSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
-        fields = '__all__'
-        read_only_fields = ('id', 'date_joined', 'last_login', 'is_superuser', 'is_staff', 'is_active', )
+        fields = [
+            'id', 'last_login',
+            'is_superuser', 
+            'username',
+            'full_name',
+            'role',
+            'ruxsat',
+        ]
+        read_only_fields = ('id', 'last_login', 'ruxsat', 'role', 'username', 'is_superuser', )
         write_only_fields = ('password', )
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = User(**validated_data)
+        if password:
+            user.set_password(password, save=True)
+        user.save()
+        return user
+
 
 class TestSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,12 +95,28 @@ class GetUserSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('id', 'date_joined', 'last_login', 'is_superuser', 'is_staff', 'is_active', )
         extra_kwargs = {'password': {'write_only': True}}
-
 class UpdateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'password', 'full_name', 'role', 'ruxsat']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'password': {'write_only': True, 'required': False}
+        }
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+
+        # Boshqa fieldlarni yangilaymiz
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Agar parol kelgan bo‘lsa, uni shifrlaymiz
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
+
 
 
 

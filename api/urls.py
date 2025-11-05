@@ -3,11 +3,31 @@ from django.urls import path
 # U S E R S
 #############################################################################################
 # User Imports
+from api.views.user_apis import (
+    Profile,
+    GetThemes,
+    GetTickets,
+    StartTestViewSet,
+    SolveTestViewSet,
+    SolveTestDetailView,
+    UserStatisticsView
+)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
+# DRF Router yaratamiz
+router = DefaultRouter()
+router.register(r'start_tests', StartTestViewSet, basename='start_tests')
+router.register(r'solve_tests', SolveTestViewSet, basename='solve_tests')
 
 # User Urls
 urlpatterns = [
-
+    path("profile/", Profile.as_view(), name="profile"),
+    path("themes/", GetThemes.as_view(), name="themes"),
+    path("tickets/", GetTickets.as_view(), name="tickets"),
+    path("result/<int:result_id>/tests/", SolveTestDetailView.as_view(), name="get_test_detail"),
+    path("statistics/", UserStatisticsView.as_view(), name="statistics"),
+    path("", include(router.urls)),
 ]
 
 # A D M I N
