@@ -240,6 +240,7 @@ class SolveTestViewSet(viewsets.ViewSet):
         TestSheet ga variantni belgilash
         Body: { "variant_id": int }
         """
+        print(request.user)
         testsheet = get_object_or_404(TestSheet, id=pk, result__user=request.user)
         variant_id = request.data.get("variant_id")
         variant = get_object_or_404(Variant, id=variant_id, test=testsheet.test)
@@ -247,6 +248,9 @@ class SolveTestViewSet(viewsets.ViewSet):
         testsheet.current_answer = variant
         testsheet.selected = True
         testsheet.successful = (variant == testsheet.test.correct_answer)
+        if testsheet.successful:
+            testsheet.result.true_answers += 1
+            testsheet.result.save()
         testsheet.save()
 
         return Response({
@@ -302,7 +306,7 @@ class SolveTestDetailView(APIView):
         for ts in testsheets:
             variants = Variant.objects.filter(test=ts.test)
             data.append({
-                "id": ts.test.id,
+                "id": ts.id,
                 "value": ts.test.value,
                 "variants": VariantSerializer(variants, many=True).data
             })
