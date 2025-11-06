@@ -86,7 +86,8 @@ class Result(models.Model):
     description = models.TextField()
     # Kerakli numberlar
     test_length = models.IntegerField()
-    true_answers = models.IntegerField()
+    true_answers = models.IntegerField(default=0)
+    incorrect_answers = models.IntegerField(default=0)
 
     # test ni qaysi turda yechgan
     test_type = models.CharField(

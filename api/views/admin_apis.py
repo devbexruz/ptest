@@ -72,8 +72,8 @@ class UserView(AdminUser):
         if serializer.is_valid():
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
-
-            user = User.objects.create_user(username=username, password=password)
+            full_name = serializer.validated_data['full_name']
+            user = User.objects.create_user(username=username, password=password, full_name=full_name)
             return Response({'message': 'User created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -514,3 +514,25 @@ class VariantIsTrueView(AdminTestVariant):
         variant.test.active = True
         variant.test.save()
         return Response({'message': 'Variant is_true set successfully'})
+
+class StatisticsView(AdminTestVariant):
+
+    @admin_required
+    def get(self, resuest):
+        # Jami Foydalanuvchilar
+        # 0
+
+        # Jami Mavzular
+        # 0
+
+        # Jami Biletlar
+        # 0
+
+        # Jami Testlar
+        # 0
+        result = dict()
+        result['users'] = User.objects.count()
+        result['themes'] = Theme.objects.count()
+        result['tickets'] = Ticket.objects.count()
+        result['tests'] = Test.objects.count()
+        return Response(result)

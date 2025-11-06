@@ -173,7 +173,7 @@ class CreateTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Test
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'correct_answer', 'active', 'theme', 'image')
+        read_only_fields = ('id', 'created_at', 'correct_answer', 'active', 'image')
 
 class GetTestSerializer(serializers.ModelSerializer):
     class Meta:

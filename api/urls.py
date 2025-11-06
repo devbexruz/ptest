@@ -10,7 +10,8 @@ from api.views.user_apis import (
     StartTestViewSet,
     SolveTestViewSet,
     SolveTestDetailView,
-    UserStatisticsView
+    UserStatisticsView,
+    ResultStatisticsView
 )
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -26,7 +27,9 @@ urlpatterns = [
     path("themes/", GetThemes.as_view(), name="themes"),
     path("tickets/", GetTickets.as_view(), name="tickets"),
     path("result/<int:result_id>/tests/", SolveTestDetailView.as_view(), name="get_test_detail"),
-    path("statistics/", UserStatisticsView.as_view(), name="statistics"),
+    path("result/<int:result_id>/statistics/", ResultStatisticsView.as_view(), name="get_test_detail"),
+    path("statistics/", UserStatisticsView.as_view(), name="result statistics"),
+    
     path("", include(router.urls)),
 ]
 
@@ -53,7 +56,10 @@ from api.views.admin_apis import (
     # Test Variant imports
     TestVariantView,
     TestVariantByIdView,
-    VariantIsTrueView
+    VariantIsTrueView,
+
+    # Statistics
+    StatisticsView
 )
 
 # Admin Urls
@@ -79,6 +85,7 @@ urlpatterns += [
     path("admin/test/variant/<int:pk>/", TestVariantByIdView.as_view(), name="Test-variant-get-update-delete"),
     # True Variant select url
     path("admin/test/variant/<int:pk>/true/", VariantIsTrueView.as_view(), name="Test-variant-true-select"),
+    path("admin/statistics/", StatisticsView.as_view(), name="Statistics"),
 ]
 
 

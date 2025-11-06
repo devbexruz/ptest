@@ -1,5 +1,8 @@
 # timezon
 from django.utils import timezone
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -33,7 +36,7 @@ class Profile(UserApis):
         description="Get user profile"
     )
     @user_required
-    def get(self, request):
+    def get(self, request):        
         user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data)
@@ -62,7 +65,7 @@ class GetThemes(UserApis):
     )
     @user_required
     def get(self, request):
-        all_themes = Theme.objects.all()
+        all_themes = Theme.objects.all().order_by('name')
         serializer = ThemeSerializer(all_themes, many=True)
         return Response(serializer.data)
 
@@ -74,7 +77,7 @@ class GetTickets(UserApis):
     )
     @user_required
     def get(self, request):
-        all_tickets = Ticket.objects.all()
+        all_tickets = Ticket.objects.all().order_by('id')
         serializer = TicketSerializer(all_tickets, many=True)
         return Response(serializer.data)
 
@@ -121,7 +124,14 @@ class StartTestViewSet(viewsets.ViewSet):
         tests = Test.objects.filter(theme=theme, active=True)
         if not tests.exists():
             return Response({"error": "Bu mavzuda testlar mavjud emas"}, status=400)
-
+        
+        # Old not finished tests clear
+        Result.objects.filter(
+            user=request.user,
+            finished=False
+        ).delete()
+        
+        # Yangi Yaratish
         result = Result.objects.create(
             user=request.user,
             description=f"Theme {theme.name}",
@@ -151,6 +161,13 @@ class StartTestViewSet(viewsets.ViewSet):
         if not tests.exists():
             return Response({"error": "Bu biletga testlar mavjud emas"}, status=400)
 
+        # Old not finished tests clear
+        Result.objects.filter(
+            user=request.user,
+            finished=False
+        ).delete()
+
+        # Yangi Yaratish
         result = Result.objects.create(
             user=request.user,
             description=f"Ticket {ticket.name}",
@@ -180,6 +197,13 @@ class StartTestViewSet(viewsets.ViewSet):
 
         selected_tests = sample(list(tests), count)
 
+        # Old not finished tests clear
+        Result.objects.filter(
+            user=request.user,
+            finished=False
+        ).delete()
+
+        # Yangi Yaratish
         result = Result.objects.create(
             user=request.user,
             description=f"SetTest {count} ta test",
@@ -209,6 +233,13 @@ class StartTestViewSet(viewsets.ViewSet):
 
         selected_tests = sample(list(tests), count)
 
+        # Old not finished tests clear
+        Result.objects.filter(
+            user=request.user,
+            finished=False
+        ).delete()
+
+        # Yangi Yaratish
         result = Result.objects.create(
             user=request.user,
             description=f"Exam {count} ta test",
@@ -230,7 +261,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from api.models import Result, TestSheet, Variant
-
+from datetime import datetime, timedelta
 @extend_schema(tags=["User Apis"])
 class SolveTestViewSet(viewsets.ViewSet):
     @action(detail=True, methods=['post'])
@@ -242,17 +273,54 @@ class SolveTestViewSet(viewsets.ViewSet):
         """
         print(request.user)
         testsheet = get_object_or_404(TestSheet, id=pk, result__user=request.user)
+
+        if testsheet.result.finished:
+            return Response({"error": "Test allaqachon tugatilgan"}, status=400)
         variant_id = request.data.get("variant_id")
         variant = get_object_or_404(Variant, id=variant_id, test=testsheet.test)
+        # 20 minut gacha javoblarni kirita olsin
+        if testsheet.result.test_type == enums.TestChoices.EXAM and testsheet.result.start_time + timedelta(minutes=20) < timezone.now():
+            result = get_object_or_404(Result, id=testsheet.result.id, user=request.user)
+            if result.finished:
+                return Response({"error": "Test allaqachon tugatilgan"}, status=400)
 
+            # To'g'ri javoblarni hisoblash
+            true_answers = TestSheet.objects.filter(result=result, successful=True).count()
+            result.true_answers = true_answers
+            result.finished = True
+            result.end_time = timezone.now()
+            result.save()
+
+            return Response({
+                "message": "Test tugatildi",
+                "result_id": result.id,
+                "true_answers": true_answers,
+                "test_length": result.test_length
+            })
+        if testsheet.selected == True:
+            return Response({"error": "TestSheet ga variant belgilangan"}, status=400)
         testsheet.current_answer = variant
         testsheet.selected = True
         testsheet.successful = (variant == testsheet.test.correct_answer)
         if testsheet.successful:
             testsheet.result.true_answers += 1
             testsheet.result.save()
+        else:
+            testsheet.result.incorrect_answers += 1
+            testsheet.result.save()
         testsheet.save()
+        if testsheet.result.incorrect_answers == 3 and not testsheet.successful:
+            result = get_object_or_404(Result, id=testsheet.result.id, user=request.user)
 
+            # To'g'ri javoblarni hisoblash
+            true_answers = TestSheet.objects.filter(result=result, successful=True).count()
+            result.true_answers = true_answers
+            result.finished = True
+            result.end_time = timezone.now()
+            result.save()
+            return Response({
+                "error": "Test yakunlandi!"
+            })
         return Response({
             "message": "Javob saqlandi",
             "testsheet_id": testsheet.id,
@@ -284,6 +352,27 @@ class SolveTestViewSet(viewsets.ViewSet):
             "test_length": result.test_length
         })
 
+@extend_schema(tags=["User Apis"])
+class ResultStatisticsView(APIView):
+    @user_required
+    def get(self, request, result_id):
+        try:
+            result = Result.objects.get(user=request.user, id=result_id)
+        except:
+            return Response({"error": "Bunday test mavjud emas"}, status=400)
+        data = {
+            "id": result.id,
+            "all": result.test_length,
+            "trues": result.true_answers,
+            "falses": result.incorrect_answers,
+            "description": result.description,
+            "ignores": result.test_length-result.true_answers-result.incorrect_answers,
+            "percentage": round((100*result.true_answers)/result.test_length),
+            "test_type": result.test_type,
+        }
+        return Response(data)
+
+
 
 # api/views/user_apis.py
 from rest_framework.views import APIView
@@ -308,6 +397,9 @@ class SolveTestDetailView(APIView):
             data.append({
                 "id": ts.id,
                 "value": ts.test.value,
+                "status": ts.successful,
+                "image": request.build_absolute_uri(ts.test.image.url) if ts.test.image else None,
+                "current_answer": VariantSerializer(ts.current_answer).data if ts.current_answer else None,
                 "variants": VariantSerializer(variants, many=True).data
             })
         return Response(data)
@@ -329,7 +421,7 @@ class UserStatisticsView(APIView):
 
         total_tests = results.count()
         total_correct = sum(r.true_answers for r in results)
-        total_incorrect = total_correct - sum(r.true_answers for r in results)
+        total_incorrect = sum(r.incorrect_answers for r in results)
         total_questions = total_correct + total_incorrect
         avg_score = round(sum(r.true_answers for r in results) / total_tests, 1) if total_tests > 0 else 0
         avg_percent = round((total_correct / total_questions) * 100, 1) if total_questions > 0 else 0
