@@ -128,6 +128,10 @@ class UserByIdView(AdminUser):
     def delete(self, request, pk):
         try:
             user = User.objects.get(id=pk)
+            if user.id == request.user.id:
+                return Response({'detail': 'You cannot delete yourself'}, status=status.HTTP_400_BAD_REQUEST)
+            if user.is_staff:
+                return Response({'detail': 'You cannot delete a staff user'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
             return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         user.delete()
