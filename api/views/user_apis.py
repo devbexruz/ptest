@@ -275,14 +275,14 @@ class SolveTestViewSet(viewsets.ViewSet):
         testsheet = get_object_or_404(TestSheet, id=pk, result__user=request.user)
 
         if testsheet.result.finished:
-            return Response({"error": "Test allaqachon tugatilgan"}, status=400)
+            return Response({"error": "Test allaqachon tugatilgan", "finished": result.finished}, status=400)
         variant_id = request.data.get("variant_id")
         variant = get_object_or_404(Variant, id=variant_id, test=testsheet.test)
         # 20 minut gacha javoblarni kirita olsin
         if testsheet.result.test_type == enums.TestChoices.EXAM and testsheet.result.start_time + timedelta(minutes=20) < timezone.now():
             result = get_object_or_404(Result, id=testsheet.result.id, user=request.user)
             if result.finished:
-                return Response({"error": "Test allaqachon tugatilgan"}, status=400)
+                return Response({"error": "Test allaqachon tugatilgan", "finished": result.finished}, status=400)
 
             # To'g'ri javoblarni hisoblash
             true_answers = TestSheet.objects.filter(result=result, successful=True).count()
@@ -295,7 +295,7 @@ class SolveTestViewSet(viewsets.ViewSet):
                 "message": "Test tugatildi",
                 "result_id": result.id,
                 "true_answers": true_answers,
-                "test_length": result.test_length
+                "test_length": result.test_length, "finished": True
             })
         if testsheet.selected == True:
             return Response({"error": "TestSheet ga variant belgilangan"}, status=400)
@@ -319,11 +319,12 @@ class SolveTestViewSet(viewsets.ViewSet):
             result.end_time = timezone.now()
             result.save()
             return Response({
-                "error": "Test yakunlandi!"
+                "error": "Test yakunlandi!", "finished": result.finished
             })
         return Response({
             "message": "Javob saqlandi",
             "testsheet_id": testsheet.id,
+            "correct_answer": VariantSerializer(testsheet.test.correct_answer).data,
             "successful": testsheet.successful
         })
 
@@ -358,6 +359,8 @@ class ResultStatisticsView(APIView):
     def get(self, request, result_id):
         try:
             result = Result.objects.get(user=request.user, id=result_id)
+            if not result.finished:
+                return Response({"error": "Test tugatilmagan"}, status=400)
         except:
             return Response({"error": "Bunday test mavjud emas"}, status=400)
         data = {
@@ -372,7 +375,33 @@ class ResultStatisticsView(APIView):
         }
         return Response(data)
 
-
+@extend_schema(tags=["User Apis"])
+class AllResultsListView(APIView):
+    @user_required
+    def get(self, request):
+        if request.user.role == enums.RoleChoices.ADMIN or request.user.is_staff:
+            results = Result.objects.filter(
+                finished=True,
+                test_type=enums.TestChoices.EXAM
+            ).order_by("-end_time")[:50]
+        else:
+            results = Result.objects.filter(
+                user=request.user,
+                finished=True,
+                test_type=enums.TestChoices.EXAM
+            ).order_by("-end_time")[:20]
+        data = []
+        for result in results:
+            data.append({
+                "id": result.id,
+                "name": result.user.full_name,
+                "all": result.test_length,
+                "trues": result.true_answers,
+                "end_time": result.end_time.strftime("%H:%M:%S"),
+                "test_type": result.test_type,
+                "status": result.true_answers >= 18
+            })
+        return Response(data)
 
 # api/views/user_apis.py
 from rest_framework.views import APIView
@@ -400,6 +429,7 @@ class SolveTestDetailView(APIView):
                 "status": ts.successful,
                 "image": request.build_absolute_uri(ts.test.image.url) if ts.test.image else None,
                 "current_answer": VariantSerializer(ts.current_answer).data if ts.current_answer else None,
+                "correct_answer": VariantSerializer(ts.test.correct_answer).data if (ts.result.finished or ts.current_answer) else None,
                 "variants": VariantSerializer(variants, many=True).data
             })
         return Response(data)

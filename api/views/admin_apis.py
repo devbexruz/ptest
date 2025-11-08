@@ -112,6 +112,10 @@ class UserByIdView(AdminUser):
     def put(self, request, pk):
         try:
             user = User.objects.get(id=pk)
+            if user.id == request.user.id:
+                return Response({'detail': "O\'zingizni ham o\'zgartirishingiz mumkin"}, status=status.HTTP_400_BAD_REQUEST)
+            if user.is_staff:
+                return Response({'detail': "Super userni o'zgartirish mumkin emas"}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
             return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = UpdateUserSerializer(user, data=request.data)

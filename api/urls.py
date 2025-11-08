@@ -11,7 +11,8 @@ from api.views.user_apis import (
     SolveTestViewSet,
     SolveTestDetailView,
     UserStatisticsView,
-    ResultStatisticsView
+    ResultStatisticsView,
+    AllResultsListView
 )
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -28,6 +29,7 @@ urlpatterns = [
     path("tickets/", GetTickets.as_view(), name="tickets"),
     path("result/<int:result_id>/tests/", SolveTestDetailView.as_view(), name="get_test_detail"),
     path("result/<int:result_id>/statistics/", ResultStatisticsView.as_view(), name="get_test_detail"),
+    path("results/", AllResultsListView.as_view(), name="get_all_results"),
     path("statistics/", UserStatisticsView.as_view(), name="result statistics"),
     
     path("", include(router.urls)),
