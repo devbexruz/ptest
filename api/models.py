@@ -123,3 +123,9 @@ class UserSession(models.Model):
     def __str__(self):
         return f"{self.user.username} -> {self.token}"
 
+
+
+class Data(models.Model):
+    key = models.CharField(max_length=100, unique=True)
+    value = models.CharField(max_length=255)
+

@@ -104,3 +104,19 @@ urlpatterns += [
     path("auth/login/", LoginView.as_view(), name="Login"),
     path("auth/logout/", LogoutView.as_view(), name="Logout")
 ]
+
+
+
+
+# P U B L I C
+#############################################################################################
+# Public Imports
+from api.views.public_apis import (
+    ConnectionView,
+)
+
+
+# Public Urls
+urlpatterns += [
+    path("public/connection/", ConnectionView.as_view(), name="Connection"),
+]

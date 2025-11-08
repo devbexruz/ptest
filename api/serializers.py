@@ -4,7 +4,8 @@ from api.models import (
     Test,
     Theme,
     Ticket,
-    Variant
+    Variant,
+    Data
 )
 
 class UserSerializer(serializers.ModelSerializer):
@@ -245,3 +246,9 @@ class UpdateVariantSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('id', 'created_at', 'test', )
 
+
+
+class DataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Data
+        fields = '__all__'
