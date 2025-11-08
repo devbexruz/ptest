@@ -39,12 +39,17 @@ class ConnectionView(APIView):
         responses={200: DataSerializer},
     )
     @admin_required
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.update()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    def put(self, request):
+        serializer = DataSerializer(data=request.data)
+        try:
+            data = Data.objects.get(key=request.data["key"])
+            data.value = request.data["value"]
+            data.save()
+            return Response({
+                "message": "Data updated successfully",
+                "data": serializer.data
+            })
+        except Data.DoesNotExist:
+            return Response({"detail": "Data not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
