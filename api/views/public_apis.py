@@ -42,8 +42,8 @@ class ConnectionView(APIView):
     def put(self, request):
         serializer = DataSerializer(data=request.data)
         try:
-            data = Data.objects.get(key=request.data["key"])
-            data.value = request.data["value"]
+            data = Data.objects.get(key=serializer.validated_data["key"])
+            data.value = serializer.validated_data["value"]
             data.save()
             return Response({
                 "message": "Data updated successfully",
