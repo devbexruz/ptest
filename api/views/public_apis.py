@@ -25,7 +25,7 @@ class ConnectionView(APIView):
         try:
             telegram_link = Data.objects.get(key="telegram_link")
         except Data.DoesNotExist:
-            phone_number = Data.objects.create(key="telegram_link", value="https://t.me/bexruzdeveloper")
+            telegram_link = Data.objects.create(key="telegram_link", value="https://t.me/bexruzdeveloper")
         try:
             phone_number = Data.objects.get(key="phone_number")
         except Data.DoesNotExist:
