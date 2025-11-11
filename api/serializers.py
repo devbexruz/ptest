@@ -170,11 +170,14 @@ class UpdateTicketSerializer(serializers.ModelSerializer):
 #############################################################################
 
 class CreateTestSerializer(serializers.ModelSerializer):
-
+    image = serializers.ImageField(
+        required=False, 
+        allow_null=True
+    )
     class Meta:
         model = Test
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'correct_answer', 'active', 'image')
+        read_only_fields = ('id', 'created_at', 'correct_answer', 'active',)
 
 class GetTestSerializer(serializers.ModelSerializer):
     class Meta:

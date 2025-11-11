@@ -162,3 +162,11 @@ CORS_ALLOW_HEADERS = [
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Fayllar uchun maksimal hajm (10 MB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB = 10 * 1024 * 1024
+
+# Umumiy so'rov ma'lumotlari uchun maksimal hajm (10 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+
+# Agar katta hajmdagi ma'lumotlar yuborilsa, so'rov darajasidagi xatolardan qochish uchun
+# Agar fayl 10 MB dan oshsa, bu xato beriladi.

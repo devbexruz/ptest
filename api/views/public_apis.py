@@ -30,9 +30,19 @@ class ConnectionView(APIView):
             phone_number = Data.objects.get(key="phone_number")
         except Data.DoesNotExist:
             phone_number = Data.objects.create(key="phone_number", value="+998123456789")
+        try:
+            instagram_link = Data.objects.get(key="instagram_link")
+        except Data.DoesNotExist:
+            instagram_link = Data.objects.create(key="instagram_link", value="https://www.instagram.com/bexruzdeveloper/")
+        try:
+            youtube_link = Data.objects.get(key="youtube_link")
+        except Data.DoesNotExist:
+            youtube_link = Data.objects.create(key="youtube_link", value="https://www.youtube.com/@bexruzdeveloper")
         return Response({
             "telegram_link": telegram_link.value,
-            "phone_number": phone_number.value
+            "phone_number": phone_number.value,
+            "instagram_link": instagram_link.value,
+            "youtube_link": youtube_link.value
         })
     @extend_schema(
         request=DataSerializer,

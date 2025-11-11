@@ -307,6 +307,8 @@ class AdminTest(APIView):
 
 # Test (Create, Get All)
 class TestView(AdminTest):
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
     @extend_schema(
         request=CreateTestSerializer,
         responses={201: {'message': 'Test created successfully'}},
@@ -314,12 +316,20 @@ class TestView(AdminTest):
     )
     @admin_required
     def post(self, request):
-        serializer = CreateTestSerializer(data=request.data)
+        serializer = CreateTestSerializer(data=request.data) 
         if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Test created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            # Rasm va boshqa ma'lumotlar avtomatik saqlanadi
+            new_test = serializer.save()
+                 
+            return Response(
+                {'message': 'Test created successfully', 'data': GetTestSerializer(new_test).data}, 
+                status=status.HTTP_201_CREATED
+            )
+        
+        # Xatoning aniq sababini ko'rish uchun!
+        print("Serializer xatoliklari:", serializer.errors)
+        
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     @extend_schema(
         responses={200: GetTestSerializer(many=True)},
         description="Get all tests"
