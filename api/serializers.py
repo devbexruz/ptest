@@ -119,6 +119,8 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ClearUserResultsSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
 
 
 

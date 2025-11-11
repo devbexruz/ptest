@@ -29,7 +29,9 @@ from api.serializers import (
     # Test Variant serializers
     CreateVariantSerializer,
     GetVariantSerializer,
-    UpdateVariantSerializer
+    UpdateVariantSerializer,
+    # Data
+    ClearUserResultsSerializer
 )
 from api.utils import generate_token
 from rest_framework.views import APIView
@@ -44,8 +46,10 @@ from api.models import (
     Ticket,
     TestSheet,
     Variant,
+    Result
 
 )
+from api import enums
 
 # Imports for swagger
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
@@ -140,7 +144,65 @@ class UserByIdView(AdminUser):
             return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         user.delete()
         return Response({'message': 'User deleted successfully'})
-    
+
+# Get Users Statistika
+class UserStatisticsView(AdminUser):
+    @extend_schema(
+        responses={200: GetUserSerializer(many=True)},
+        description="Get all users"
+    )
+    @admin_required
+    def get(self, request):
+        users = User.objects.all()
+        datas = dict()
+        results = Result.objects.filter(test_type=enums.TestChoices.EXAM)
+        for result in results:
+            if result.user.id not in datas:
+                datas[result.user.id] = {
+                    "name": result.user.full_name,
+                    "total_tests": 0,
+                    "total_correct": 0,
+                    "total_incorrect": 0,
+                    "total_questions": 0,
+                    "true_answers": 0,
+                    "average_percent": 0,
+                    "best_score": 0,
+                }
+            datas[result.user.id]["total_tests"] += 1
+            datas[result.user.id]["total_correct"] += result.true_answers
+            datas[result.user.id]["total_incorrect"] += result.incorrect_answers
+            datas[result.user.id]["total_questions"] += result.test_length
+            datas[result.user.id]["true_answers"] += result.true_answers
+            datas[result.user.id]["best_score"] = max(datas[result.user.id]["best_score"], result.true_answers)
+        result = []
+        for user_id, user in datas.items():
+            result.append({
+                "id": user_id,
+                "name": user["name"],
+                "total_tests": datas[user_id]["total_tests"],
+                "total_correct": datas[user_id]["total_correct"],
+                "total_incorrect": datas[user_id]["total_incorrect"],
+                "average_score": round(datas[user_id]["true_answers"]/datas[user_id]["total_tests"]),
+                "average_percent": datas[user_id]["average_percent"],
+                "total_questions": datas[user_id]["total_questions"],
+                "best_score": datas[user_id]["best_score"],
+            })
+        return Response(result)
+    # User Results Clear
+    @extend_schema(
+        request=ClearUserResultsSerializer,
+        responses={200: {
+            "message": "Results deleted successfully"
+        }},
+        description="Get all users"
+    )
+    @admin_required
+    def post(self, request):
+        serializer = ClearUserResultsSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        Result.objects.filter(user_id=serializer.validated_data["user_id"], test_type=enums.TestChoices.EXAM).delete()
+        return Response({'message': 'Results deleted successfully'})
 
 # Admin Mavzu
 ##############################

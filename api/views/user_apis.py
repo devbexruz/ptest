@@ -278,8 +278,8 @@ class SolveTestViewSet(viewsets.ViewSet):
             return Response({"error": "Test allaqachon tugatilgan", "finished": result.finished}, status=400)
         variant_id = request.data.get("variant_id")
         variant = get_object_or_404(Variant, id=variant_id, test=testsheet.test)
-        # 20 minut gacha javoblarni kirita olsin
-        if testsheet.result.test_type == enums.TestChoices.EXAM and testsheet.result.start_time + timedelta(minutes=20) < timezone.now():
+        # 25 minut gacha javoblarni kirita olsin
+        if testsheet.result.test_type == enums.TestChoices.EXAM and testsheet.result.start_time + timedelta(minutes=25) < timezone.now():
             result = get_object_or_404(Result, id=testsheet.result.id, user=request.user)
             if result.finished:
                 return Response({"error": "Test allaqachon tugatilgan", "finished": result.finished}, status=400)
@@ -447,13 +447,13 @@ class UserStatisticsView(APIView):
     @user_required
     def get(self, request):
         user = request.user
-        results = Result.objects.filter(user=user)
+        results = Result.objects.filter(test_type=enums.TestChoices.EXAM, user=user)
 
         total_tests = results.count()
         total_correct = sum(r.true_answers for r in results)
         total_incorrect = sum(r.incorrect_answers for r in results)
         total_questions = total_correct + total_incorrect
-        avg_score = round(sum(r.true_answers for r in results) / total_tests, 1) if total_tests > 0 else 0
+        avg_score = round(sum(r.true_answers for r in results) / total_tests) if total_tests > 0 else 0
         avg_percent = round((total_correct / total_questions) * 100, 1) if total_questions > 0 else 0
         best_score = max([r.true_answers for r in results], default=0)
 

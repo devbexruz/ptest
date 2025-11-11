@@ -61,7 +61,8 @@ from api.views.admin_apis import (
     VariantIsTrueView,
 
     # Statistics
-    StatisticsView
+    StatisticsView,
+    UserStatisticsView
 )
 
 # Admin Urls
@@ -85,9 +86,13 @@ urlpatterns += [
     # Test Variant urls
     path("admin/test/<int:test_id>/variant/", TestVariantView.as_view(), name="Test-variant-get-all-create"),
     path("admin/test/variant/<int:pk>/", TestVariantByIdView.as_view(), name="Test-variant-get-update-delete"),
+
     # True Variant select url
     path("admin/test/variant/<int:pk>/true/", VariantIsTrueView.as_view(), name="Test-variant-true-select"),
     path("admin/statistics/", StatisticsView.as_view(), name="Statistics"),
+
+    # All User Results
+    path("admin/all_users_stats/", UserStatisticsView.as_view(), name="All user stats"),
 ]
 
 
