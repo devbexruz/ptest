@@ -4,6 +4,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status, parsers
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import parser_classes
 from api.serializers import (
     # User serializers
     CreateUserSerializer,
@@ -435,7 +436,6 @@ class TestView(AdminTest):
         serializer = GetTestSerializer(tests, many=True)
         return Response(serializer.data)
 class TestByIdView(AdminTest):
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     @extend_schema(
         responses={200: GetTestSerializer},
@@ -480,7 +480,7 @@ class TestByIdView(AdminTest):
             return Response({'detail': 'Test not found'}, status=status.HTTP_404_NOT_FOUND)
         test.delete()
         return Response({'message': 'Test deleted successfully'})
-
+    @parser_classes([parsers.MultiPartParser, parsers.FormParser])
     @extend_schema(
         request={
             'multipart/form-data': {
