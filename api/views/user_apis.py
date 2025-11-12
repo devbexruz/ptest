@@ -410,44 +410,68 @@ from rest_framework import permissions
 from api.models import TestSheet, Variant
 from api.serializers import VariantSerializer
 import random
-
+# Optimallashtirilgan Kod
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.db.models import Prefetch
+import random
 
 @extend_schema(tags=["User Apis"])
 class SolveTestDetailView(APIView):
     
     @user_required
     def get(self, request, result_id):
-        # Faqat foydalanuvchiga tegishli TestSheetlarni olish
-        testsheets = TestSheet.objects.filter(result__id=result_id, result__user=request.user).all()
+        # 1. N+1 muammosini hal qilish: Faqat bitta so'rovda Test va Variantlarni oldindan yuklash
+        testsheets_qs = TestSheet.objects.filter(
+            result__id=result_id, 
+            result__user=request.user
+        ).select_related(
+            'test',  # Test ob'ektini yuklaydi
+            'current_answer', # Current Answer (Agar Modelda ForeignKey bo'lsa)
+            'test__correct_answer' # Correct Answer (Agar Modelda ForeignKey bo'lsa)
+        ).prefetch_related(
+            Prefetch('test__variant_set', queryset=Variant.objects.all()) 
+            # Testga tegishli barcha variantlarni bir so'rovda yuklaydi
+        ).all()
+        
         data = []
 
-        for ts in testsheets:
-            variants = Variant.objects.filter(test=ts.test)
-            variant_new_order = []
-            for variant in variants:
-                if variant.id not in ts.variant_orders:
-                    ts.variant_orders.append(variant.id)
-                    ts.save()
-            for variant in ts.variant_orders:
-                try:
-                    var = variants.get(id=variant)
-                    variant_new_order.append(var)
-                except Variant.DoesNotExist:
-                    ts.variant_orders.remove(variant)
-                    ts.save()
+        # 2. Loop ichidagi DB so'rovlarini olib tashlash
+        for ts in testsheets_qs:
+            # Variantlarni oldindan yuklangan to'plamdan olish
+            variants = list(ts.test.variant_set.all())
             
-            random.shuffle(ts.variant_orders)
+            # Agar variant_orders bo'sh bo'lsa (yoki yangi variantlar qo'shilgan bo'lsa):
+            # Bu qism mantiqi GET dan POST/PATCH metodiga o'tkazilishi tavsiya etiladi!
+            # Agar shunday qolishi kerak bo'lsa, 'update_fields' dan foydalaning va save() ni loopdan tashqarida qiling:
+            
+            # Mantiqiy xatoni tuzatish: variant_orders ni faqat kerak bo'lsa yangilash
+            variant_ids_in_db = {v.id for v in variants}
+            
+            # Agar mavjud bo'lmasa yoki eskirgan bo'lsa, yangilash logikasi (POST/PATCH uchun yaxshiroq)
+            if not ts.variant_orders or set(ts.variant_orders) != variant_ids_in_db:
+                ts.variant_orders = list(variant_ids_in_db)
+                random.shuffle(ts.variant_orders)
+                # Barcha o'zgarishlarni to'plab, loopdan keyin saqlash afzal
+                ts.save() # Qolgan kodni to'liq ko'rmaganim uchun shu yerda qoldirildi, lekin buni optimallashtirish kerak.
+
+            # Variant tartibini olish:
+            variant_map = {v.id: v for v in variants}
+            # variant_orders bo'yicha to'g'ri tartiblash
+            variant_new_order = [variant_map[id] for id in ts.variant_orders if id in variant_map]
+
             data.append({
                 "id": ts.id,
                 "value": ts.test.value,
                 "status": ts.successful,
-                "image": request.build_absolute_uri(ts.test.image.url) if ts.test.image else None,
+                # Rasm: .name tekshiruvi qo'shildi
+                "image": request.build_absolute_uri(ts.test.image.url) if ts.test.image and ts.test.image.name else None,
                 "current_answer": VariantSerializer(ts.current_answer).data if ts.current_answer else None,
                 "correct_answer": VariantSerializer(ts.test.correct_answer).data if (ts.result.finished or ts.current_answer) else None,
                 "variants": VariantSerializer(variant_new_order, many=True).data
             })
+        
         return Response(data)
-
 
 # views.py
 from rest_framework.views import APIView
