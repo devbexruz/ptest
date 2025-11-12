@@ -104,7 +104,7 @@ class Result(models.Model):
 class TestSheet(models.Model):
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
-    varian_orders = models.JSONField(null=True, blank=True)
+    variant_orders = models.JSONField(null=True, blank=True)
     current_answer = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
     selected = models.BooleanField(default=False)
     successful = models.BooleanField(default=None, null=True)

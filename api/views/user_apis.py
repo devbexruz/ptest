@@ -425,18 +425,18 @@ class SolveTestDetailView(APIView):
             variants = Variant.objects.filter(test=ts.test)
             variant_new_order = []
             for variant in variants:
-                if variant.id not in ts.varian_orders:
-                    ts.varian_orders.append(variant.id)
+                if variant.id not in ts.variant_orders:
+                    ts.variant_orders.append(variant.id)
                     ts.save()
-            for variant in ts.varian_orders:
+            for variant in ts.variant_orders:
                 try:
                     var = variants.get(id=variant)
                     variant_new_order.append(var)
                 except Variant.DoesNotExist:
-                    ts.varian_orders.remove(variant)
+                    ts.variant_orders.remove(variant)
                     ts.save()
             
-            random.shuffle(ts.varian_orders)
+            random.shuffle(ts.variant_orders)
             data.append({
                 "id": ts.id,
                 "value": ts.test.value,
