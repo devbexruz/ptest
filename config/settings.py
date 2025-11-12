@@ -30,7 +30,12 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["backend.autotestmax.uz", "127.0.0.1", "autotestmax.uz"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://backend.autotestmax.uz",
+    "https://autotestmax.uz",
+]
+
 
 
 # Application definition
