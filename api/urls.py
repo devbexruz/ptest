@@ -31,7 +31,6 @@ urlpatterns = [
     path("result/<int:result_id>/statistics/", ResultStatisticsView.as_view(), name="get_test_detail"),
     path("results/", AllResultsListView.as_view(), name="get_all_results"),
     path("statistics/", UserStatisticsView.as_view(), name="result statistics"),
-    
     path("", include(router.urls)),
 ]
 
@@ -62,7 +61,8 @@ from api.views.admin_apis import (
 
     # Statistics
     StatisticsView,
-    UserStatisticsView
+    UserStatisticsView,
+    AdminUserStatisticsView
 )
 
 # Admin Urls
@@ -93,6 +93,7 @@ urlpatterns += [
 
     # All User Results
     path("admin/all_users_stats/", UserStatisticsView.as_view(), name="All user stats"),
+    path("admin/user_statistics/<int:user_id>/", AdminUserStatisticsView.as_view(), name="user statistics"),
 ]
 
 

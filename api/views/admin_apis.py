@@ -204,6 +204,39 @@ class UserStatisticsView(AdminUser):
         Result.objects.filter(user_id=serializer.validated_data["user_id"], test_type=enums.TestChoices.EXAM).delete()
         return Response({'message': 'Results deleted successfully'})
 
+
+
+class AdminUserStatisticsView(APIView):
+    @admin_required
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        results = Result.objects.filter(test_type=enums.TestChoices.EXAM, user=user)
+
+        total_tests = results.count()
+        total_correct = sum(r.true_answers for r in results)
+        total_incorrect = sum(r.incorrect_answers for r in results)
+        total_questions = total_correct + total_incorrect
+        avg_score = round(sum(r.true_answers for r in results) / total_tests) if total_tests > 0 else 0
+        avg_percent = round((total_correct / total_questions) * 100, 1) if total_questions > 0 else 0
+        best_score = max([r.true_answers for r in results], default=0)
+
+        data = {
+            "total_tests": total_tests,
+            "total_correct": total_correct,
+            "total_incorrect": total_incorrect,
+            "total_questions": total_questions,
+            "average_score": avg_score,
+            "average_percent": avg_percent,
+            "best_score": best_score,
+        }
+
+        return Response(data)
+
+
+
 # Admin Mavzu
 ##############################
 # swagger-tag: Admin Mavzu

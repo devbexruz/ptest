@@ -409,7 +409,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from api.models import TestSheet, Variant
 from api.serializers import VariantSerializer
-
+import random
 
 
 @extend_schema(tags=["User Apis"])
@@ -423,6 +423,20 @@ class SolveTestDetailView(APIView):
 
         for ts in testsheets:
             variants = Variant.objects.filter(test=ts.test)
+            variant_new_order = []
+            for variant in variants:
+                if variant.id not in ts.varian_orders:
+                    ts.varian_orders.append(variant.id)
+                    ts.save()
+            for variant in ts.varian_orders:
+                try:
+                    var = variants.get(id=variant)
+                    variant_new_order.append(var)
+                except Variant.DoesNotExist:
+                    ts.varian_orders.remove(variant)
+                    ts.save()
+            
+            random.shuffle(ts.varian_orders)
             data.append({
                 "id": ts.id,
                 "value": ts.test.value,
@@ -430,7 +444,7 @@ class SolveTestDetailView(APIView):
                 "image": request.build_absolute_uri(ts.test.image.url) if ts.test.image else None,
                 "current_answer": VariantSerializer(ts.current_answer).data if ts.current_answer else None,
                 "correct_answer": VariantSerializer(ts.test.correct_answer).data if (ts.result.finished or ts.current_answer) else None,
-                "variants": VariantSerializer(variants, many=True).data
+                "variants": VariantSerializer(variant_new_order, many=True).data
             })
         return Response(data)
 

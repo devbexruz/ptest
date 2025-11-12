@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import random
 from . import enums
 import uuid, os
 
@@ -100,15 +101,20 @@ class Result(models.Model):
     end_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"{self.description} - {self.user.username}"
-
 class TestSheet(models.Model):
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
+    varian_orders = models.JSONField(null=True, blank=True)
     current_answer = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
     selected = models.BooleanField(default=False)
     successful = models.BooleanField(default=None, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        vars = Variant.objects.filter(test=self.test)
+        self.varian_orders = [v.id for v in vars]
+        self.varian_orders = random.sample(self.varian_orders, len(self.varian_orders))
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.test} - {self.result.id} - {'Successful' if self.successful else 'Unsuccessful'}"
 
