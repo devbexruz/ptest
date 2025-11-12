@@ -191,7 +191,7 @@ class UpdateTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Test
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'image')
+        read_only_fields = ('id', 'created_at', 'image', 'ticket', 'correct_answer', 'active')
 class UploadTestImageSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
         required=False, 

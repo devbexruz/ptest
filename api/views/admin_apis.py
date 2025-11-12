@@ -473,6 +473,7 @@ class TestByIdView(AdminTest):
     )
     @admin_required
     def delete(self, request, pk):
+        
         try:
             test = Test.objects.get(id=pk)
         except Test.DoesNotExist:
